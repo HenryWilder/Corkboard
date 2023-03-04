@@ -26,20 +26,20 @@ void Notecard::DrawCard(float shadowHeight) const
 	EndBlendMode();
 
 	DrawRectangleV(position, size, color);
-	int x = position.x + 5;
-	int y = position.y + 5;
+	float x = position.x + 5;
+	float y = position.y + 5;
 
 	// Todo: Replace this with a texture or shader or something.
 	{
-		int left = position.x;
-		int right = position.x + size.x;
-		int lineY = y + titleSize;
-		DrawLine(left, lineY, right, lineY, cardLineRed);
-		int bottom = position.y + size.y;
+		float left = position.x;
+		float right = position.x + size.x;
+		float lineY = y + titleSize;
+		DrawLineEx({ left, lineY }, { right, lineY }, 1.0f, cardLineRed);
+		float bottom = position.y + size.y;
 		BeginBlendMode(BLEND_MULTIPLIED);
 		for (lineY += contentSize; lineY < bottom; lineY += contentSize)
 		{
-			DrawLine(left, lineY, right, lineY, cardLineBlue);
+			DrawLineEx({ left, lineY }, { right, lineY }, 1.0f, cardLineBlue);
 		}
 		EndBlendMode();
 	}

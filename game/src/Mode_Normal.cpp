@@ -16,10 +16,8 @@ Camera2D cam;
 void Mode_Normal_Init()
 {
     draggedElement.Clear();
-    cam.offset = { 0,0 };
-    cam.target = { 0,0 };
-    cam.rotation = 0.0f;
-    cam.zoom = 1.0f;
+    cam = { 0 };
+    cam.zoom = 1;
 }
 
 void Mode_Normal_Unload()
@@ -98,9 +96,25 @@ bool Mode_Normal_Update()
     Vector2 cursorDelta = GetMouseDelta();
     Vector2 cursorDeltaInWorld = cursorDelta / cam.zoom;
 
+    // Pan with middle drag
+    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+    {
+        cam.target -= cursorDeltaInWorld;
+    }
+
+    // Zoom with scroll
+    if (float scroll = GetMouseWheelMove(); scroll != 0)
+    {
+        cam.offset = cursor;
+        cam.target = cursorInWorld;
+        cam.zoom *= scroll * (scroll > 0 ? 1.5f : -0.75f);
+        cam.zoom = Clamp(cam.zoom, 0.125f, 8.0f);
+    }
+
+    // Hover checks
+
     hoveredElement.Clear(); // Resets each frame
 
-    // TODO
     {
         if (!draggedElement.IsPin()) // Ignore these collision when creating a thread
         {
@@ -235,18 +249,6 @@ FinishHoverTests:
         }
     }
 
-    // Continue panning
-    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
-    {
-        cam.target -= cursorDeltaInWorld;
-    }
-
-    float scroll = GetMouseWheelMove();
-    if (scroll > 0.0f)
-        cam.zoom *= 2;
-    else if (scroll < 0.0f)
-        cam.zoom /= 2;
-
     /******************************************
     *   Draw the frame                        *
     ******************************************/
@@ -293,7 +295,7 @@ FinishHoverTests:
             if (draggedElement.IsPin())
             {
                 Notecard* startCard = draggedElement.GetCard();
-                DrawLineEx(startCard->PinPosition(), cursor, Thread::thickness, threadColor);
+                DrawLineEx(startCard->PinPosition(), cursorInWorld, Thread::thickness, threadColor);
             }
 
             // Draw pins
