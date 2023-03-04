@@ -1,7 +1,6 @@
 #pragma once
 #include <raylib.h>
 #include <string>
-#include <deque>
 #include <unordered_set>
 
 constexpr Color cardstockWhite = {240,245,245,255};
@@ -59,7 +58,7 @@ public:
 	Rectangle GetCardRectangle() const;
 };
 
-extern std::deque<Notecard*> g_cards;
+extern std::vector<Notecard*> g_cards;
 
 void CreateCard(Vector2 position, Color color);
 

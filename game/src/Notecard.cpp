@@ -103,11 +103,11 @@ Rectangle Notecard::GetCardRectangle() const
 	return { position.x, position.y, size.x, size.y };
 }
 
-std::deque<Notecard*> g_cards;
+std::vector<Notecard*> g_cards;
 
 void CreateCard(Vector2 position, Color color)
 {
-	g_cards.push_front(new Notecard(position, color));
+	g_cards.push_back(new Notecard(position, color));
 }
 
 void DestroyCard(Notecard* card)
