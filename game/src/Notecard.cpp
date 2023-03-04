@@ -18,11 +18,11 @@ Vector2 Notecard::PinPosition() const
 	return Vector2Add(position, pinOffset);
 }
 
-void Notecard::DrawCard() const
+void Notecard::DrawCard(float shadowHeight) const
 {
 	// Shadow
 	BeginBlendMode(BLEND_MULTIPLIED);
-	DrawRectangleV(Vector2Add(position, { -1,2 }), size, {0,0,0,120});
+	DrawRectangleV(Vector2Add(position, { -shadowHeight / 2, shadowHeight }), size, {0,0,0,120});
 	EndBlendMode();
 
 	DrawRectangleV(position, size, color);

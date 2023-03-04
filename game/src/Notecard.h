@@ -46,7 +46,7 @@ public:
 	Vector2 PinPosition() const;
 
 	// The card is on a layer below the threads
-	void DrawCard() const;
+	void DrawCard(float shadowHeight) const;
 	void DrawCardGhost() const;
 
 	// The pin is on a layer above the threads

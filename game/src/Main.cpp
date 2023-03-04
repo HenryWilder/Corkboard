@@ -184,8 +184,6 @@ int main()
             {
                 draggedElement.GetCard()->position = cursor + clickOffset;
             }
-
-            // Thread dragging has visual effect but no active effect until release.
         }
 
         // Handle clicks
@@ -260,11 +258,11 @@ int main()
             // Draw cards
             for (Notecard* card : g_cards)
             {
-                card->DrawCard();
+                card->DrawCard(draggedElement.IsCard() && card == draggedElement.GetCard() ? 4.0f : 2.0f);
             }
 
             // Hovered card/pin
-            if (hoveredElement.IsCardOrPin())
+            if (hoveredElement.IsCardOrPin() && draggedElement.IsEmpty())
             {
                 Notecard* card = hoveredElement.GetCard();
 
@@ -294,7 +292,7 @@ int main()
             }
 
             // Hovering thread
-            if (hoveredElement.IsThread())
+            if (hoveredElement.IsThread() && draggedElement.IsEmpty())
             {
                 Thread* thread = hoveredElement.GetThread();
 
@@ -315,7 +313,7 @@ int main()
             }
 
             // Draw ghost of hovered card over everything else
-            if (hoveredElement.IsCard())
+            if (hoveredElement.IsCard() && draggedElement.IsEmpty())
             {
                 Notecard* card = hoveredElement.GetCard();
 
