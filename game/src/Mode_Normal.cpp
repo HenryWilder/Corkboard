@@ -7,8 +7,6 @@
 #include "Elements.h"
 #include "Modes.h"
 
-#define CORKBOARD CLITERAL(Color){202,164,120,255}
-
 Element draggedElement;
 Element hoveredElement;
 Camera2D cam;
@@ -85,12 +83,15 @@ void DrawIcon_Destroy(Vector2 cursor)
     DrawLineEx(topRight, botLeft, 2, MAROON);
 }
 
-bool Mode_Normal_Update()
+double lastClickTime = 0.0f;
+
+void Mode_Normal_Update()
 {
     /******************************************
     *   Simulate frame and update variables   *
     ******************************************/
 
+#pragma region Camera control
     Vector2 cursor = GetMousePosition();
     Vector2 cursorInWorld = GetScreenToWorld2D(cursor, cam);
     Vector2 cursorDelta = GetMouseDelta();
@@ -110,11 +111,11 @@ bool Mode_Normal_Update()
         cam.zoom *= scroll * (scroll > 0 ? 1.5f : -0.75f);
         cam.zoom = Clamp(cam.zoom, 0.125f, 8.0f);
     }
+#pragma endregion
 
+#pragma region Hover Update
     // Hover checks
-
     hoveredElement.Clear(); // Resets each frame
-
     {
         if (!draggedElement.IsPin()) // Ignore these collision when creating a thread
         {
@@ -161,7 +162,9 @@ bool Mode_Normal_Update()
         }
     }
 FinishHoverTests:
+#pragma endregion
 
+#pragma region Dragging
     // Dragging something
     if (draggedElement.IsSomething())
     {
@@ -186,7 +189,9 @@ FinishHoverTests:
             draggedElement.GetCard()->position += cursorDeltaInWorld;
         }
     }
+#pragma endregion
 
+#pragma region Clicks
     // Handle clicks
     // Clicking has no effect when dragging.
     else if (draggedElement.IsEmpty())
@@ -197,24 +202,29 @@ FinishHoverTests:
             draggedElement = hoveredElement;
         }
 
-        // Double click a notecard
-        // Edits card text
-        else if (hoveredElement.IsCard() && IsMouseButtonPressed(GESTURE_DOUBLETAP))
-        {
-            //SetMode_TextEdit(hoveredElement.GetCard());
-            //return true;
-        }
-
         // Drag a notecard
         else if (hoveredElement.IsCard() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            draggedElement = hoveredElement;
+            constexpr double doubleClickTimeout = 0.3; // 300 milliseconds
+            double time = GetTime();
+            // Double click
+            if (time - lastClickTime <= doubleClickTimeout)
+            {
+                SetMode_TextEdit(hoveredElement.GetCard());
+                return;
+            }
+            // Regular click
+            else
+            {
+                draggedElement = hoveredElement;
 
-            Notecard* card = draggedElement.GetCard();
+                Notecard* card = draggedElement.GetCard();
 
-            // Move card to end
-            g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
-            g_cards.push_back(card);
+                // Move card to end
+                g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
+                g_cards.push_back(card);
+            }
+            lastClickTime = time;
         }
 
         // Left click the board
@@ -248,33 +258,52 @@ FinishHoverTests:
             hoveredElement.Clear();
         }
     }
+#pragma endregion
 
     /******************************************
     *   Draw the frame                        *
     ******************************************/
 
+    constexpr float highlightThickness = 3.0f;
+    constexpr Color highlightColor = YELLOW;
+
     BeginDrawing(); {
 
-        ClearBackground(CORKBOARD);
+        ClearBackground(corkboardColor);
 
+        /******************************************
+        *   Draw the world                        *
+        ******************************************/
+
+#pragma region Draw world
         BeginMode2D(cam); {
 
             // Draw cards
-            for (Notecard* card : g_cards)
+            if (draggedElement.IsCard())
             {
-                card->DrawCard(draggedElement.IsCard() && card == draggedElement.GetCard() ? 4.0f : 2.0f);
+                for (Notecard* card : g_cards)
+                {
+                    card->DrawCard(card == draggedElement.GetCard() ? 4.0f : 2.0f);
+                }
+            }
+            else
+            {
+                for (Notecard* card : g_cards)
+                {
+                    card->DrawCard(2.0f);
+                }
             }
 
             // Hovered pin
-            if (hoveredElement.IsPin() && draggedElement.IsEmpty())
+            if (draggedElement.IsEmpty() && hoveredElement.IsPin())
             {
-                DrawRing(hoveredElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, YELLOW);
+                DrawRing(hoveredElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + highlightThickness, 0, 360, 100, highlightColor);
             }
 
             // Dragged pin
-            if (draggedElement.IsPin())
+            else if (draggedElement.IsPin())
             {
-                DrawRing(draggedElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, BLUE);
+                DrawRing(draggedElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + highlightThickness, 0, 360, 100, BLUE);
             }
 
             // Draw threads
@@ -284,15 +313,15 @@ FinishHoverTests:
             }
 
             // Hovering thread
-            if (hoveredElement.IsThread() && draggedElement.IsEmpty())
+            if (draggedElement.IsEmpty() && hoveredElement.IsThread())
             {
                 Thread* thread = hoveredElement.GetThread();
 
-                DrawLineEx(thread->StartPosition(), thread->EndPosition(), thread->thickness, YELLOW);
+                DrawLineEx(thread->StartPosition(), thread->EndPosition(), Thread::thickness, highlightColor);
             }
 
-            // Creating thread
-            if (draggedElement.IsPin())
+            // Thread being created
+            else if (draggedElement.IsPin())
             {
                 Notecard* startCard = draggedElement.GetCard();
                 DrawLineEx(startCard->PinPosition(), cursorInWorld, Thread::thickness, threadColor);
@@ -305,6 +334,7 @@ FinishHoverTests:
             }
 
             // Draw ghost of hovered card over everything else
+            // Does not occur while dragging a card
             if (hoveredElement.IsCard() && !draggedElement.IsCard())
             {
                 Notecard* card = hoveredElement.GetCard();
@@ -312,15 +342,17 @@ FinishHoverTests:
                 card->DrawCardGhost();
 
                 DrawText(TextFormat("%i", card->threads.size()), (int)card->position.x, (int)card->position.y - 10, 8, RED);
-                DrawRectangleLinesEx(card->GetCardRectangle(), 3, YELLOW);
+                DrawRectangleLinesEx(card->GetCardRectangle(), highlightThickness, highlightColor);
             }
 
         } EndMode2D();
+#pragma endregion
 
         /******************************************
         *   Draw the UI                           *
         ******************************************/
 
+#pragma region Overlay
         // Not dragging
         if (draggedElement.IsEmpty())
         {
@@ -358,10 +390,9 @@ FinishHoverTests:
         // Hovered button
         if (hoveredElement.IsButton())
         {
-            DrawRectangleLinesEx(hoveredElement.GetButton()->GetRectangle(), 3, YELLOW);
+            DrawRectangleLinesEx(hoveredElement.GetButton()->GetRectangle(), highlightThickness, highlightColor);
         }
+#pragma endregion
 
     } EndDrawing();
-
-    return false;
 }

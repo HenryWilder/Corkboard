@@ -12,6 +12,7 @@ constexpr Color cardstockLightBlue = {170,255,250,255};
 constexpr Color cardstockBlue = {170,190,255,255};
 constexpr Color cardstockLavender = {200,170,255,255};
 constexpr Color cardstockPink = {245,210,255,255};
+constexpr Color corkboardColor = { 202,164,120,255 };
 
 // Todo: find better colors.
 constexpr Color cardLineRed = RED;

@@ -43,19 +43,15 @@ int main()
 
     while (!WindowShouldClose())
     {
-        bool modeChange = false;
-        do
+        switch (GetMode())
         {
-            switch (GetMode())
-            {
-            case Mode::Normal:
-                modeChange = Mode_Normal_Update();
-                break;
-            case Mode::TextEdit:
-                modeChange = Mode_TextEdit_Update();
-                break;
-            }
-        } while (modeChange);
+        case Mode::Normal:
+            Mode_Normal_Update();
+            break;
+        case Mode::TextEdit:
+            Mode_TextEdit_Update();
+            break;
+        }
     }
 
     /******************************************

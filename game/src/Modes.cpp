@@ -5,6 +5,7 @@
 Mode mode;
 
 extern Notecard* cardBeingEdited;
+extern Camera2D cam;
 
 void SetMode_Normal()
 {
@@ -21,4 +22,9 @@ void SetMode_TextEdit(Notecard* editing)
 Mode GetMode()
 {
 	return mode;
+}
+
+Camera2D GetNormalModeCamera()
+{
+	return cam;
 }
