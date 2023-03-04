@@ -190,64 +190,62 @@ int main()
 
         // Handle clicks
         // Clicking has no effect when dragging.
-        if (draggedElement.IsEmpty())
+        else if (draggedElement.IsEmpty())
         {
-            // Left click
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            // Drag a thread from a pin
+            if (hoveredElement.IsPin() && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
-                // Left click a notecard
-                // Starts dragging it
-                if (hoveredElement.IsCardOrPin())
-                {
-                    draggedElement = hoveredElement;
-                    if (draggedElement.IsCard())
-                    {
-                        Notecard* card = draggedElement.GetCard();
-                        clickOffset = card->position - cursor;
-
-                        // Move card to end
-                        g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
-                        g_cards.push_back(card);
-                    }
-                }
-
-                // Left click the board
-                // Creates a notecard
-                if (hoveredElement.IsEmpty())
-                {
-                    CreateCard(cursor - Notecard::pinOffset, cardColor);
-                }
-
-                // Left click a button
-                // Performs the button operation
-                else if (hoveredElement.IsButton())
-                {
-                    hoveredElement.GetButton()->OnClick();
-                }
-
-                // Left clicking a thread does nothing.
+                draggedElement = hoveredElement;
             }
 
-            // Right click
-            else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            // Double click a notecard
+            // Edits card text
+            else if (hoveredElement.IsCard() && IsGestureDetected(GESTURE_DOUBLETAP))
             {
-                // Right click a notecard
-                if (hoveredElement.IsCard())
-                {
-                    DestroyCard(hoveredElement.GetCard());
-                    hoveredElement.Clear();
-                }
+                // Todo: edit text
+            }
 
-                // Right click a thread
-                else if (hoveredElement.IsThread())
-                {
-                    DestroyThread(hoveredElement.GetThread());
-                    hoveredElement.Clear();
-                }
+            // Drag a notecard
+            else if (hoveredElement.IsCard() && IsGestureDetected(GESTURE_DRAG))
+            {
+                draggedElement = hoveredElement;
 
-                // Right clicking a button does nothing.
-                // 
-                // Right clicking has no effect without an element.
+                Notecard* card = draggedElement.GetCard();
+                clickOffset = card->position - cursor;
+
+                // Move card to end
+                g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
+                g_cards.push_back(card);
+            }
+
+            // Left click the board
+            // Creates a notecard
+            else if (hoveredElement.IsEmpty() && IsGestureDetected(GESTURE_TAP))
+            {
+                CreateCard(cursor - Notecard::pinOffset, cardColor);
+            }
+
+            // Left click a button
+            // Performs the button operation
+            else if (hoveredElement.IsButton() && IsGestureDetected(GESTURE_TAP))
+            {
+                hoveredElement.GetButton()->OnClick();
+            }
+
+            // Right click a notecard
+            // Destroys it
+            if (hoveredElement.IsCard() && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            {
+                DestroyCard(hoveredElement.GetCard());
+                hoveredElement.Clear();
+            }
+
+            // Right click a thread
+            // Destroys it
+            else if (hoveredElement.IsThread() && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            {
+                DestroyThread(hoveredElement.GetThread());
+                hoveredElement.Clear();
             }
         }
 
