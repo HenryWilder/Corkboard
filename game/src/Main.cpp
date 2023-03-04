@@ -63,6 +63,66 @@ void CheckHovered(Vector2 cursor)
     }
 }
 
+void DrawIcon_CreateNotecard(Vector2 cursor)
+{
+    float width = 4 * 5;
+    float height = 3 * 5;
+    float x = cursor.x - width - 2;
+    float y = cursor.y - height - 2;
+    Rectangle rec = { x, y, width, height };
+
+    Rectangle recShadow = rec;
+    recShadow.x -= 2;
+    recShadow.y += 2;
+    BeginBlendMode(BLEND_MULTIPLIED);
+    DrawRectangleLinesEx(recShadow, 2, {0,0,0,70});
+    EndBlendMode();
+
+    DrawRectangleLinesEx(rec, 2, cardColor);
+}
+
+void DrawIcon_CreateThread(Vector2 cursor)
+{
+    float width = 4 * 5;
+    float x = cursor.x - width - 2;
+    float y = cursor.y - width / 2 - 2;
+    Vector2 left = { x,y };
+    Vector2 right = { x + width,y };
+
+    Vector2 shadowOffset = { -2,2 };
+    BeginBlendMode(BLEND_MULTIPLIED);
+    DrawLineEx(left + shadowOffset, right + shadowOffset, 2, { 0,0,0,70 });
+    EndBlendMode();
+
+    DrawLineEx(left, right, 2, threadColor);
+}
+
+void DrawIcon_Move(Vector2 cursor)
+{
+    // Todo
+}
+
+void DrawIcon_Destroy(Vector2 cursor)
+{
+    float height = 3 * 5;
+    float x = cursor.x + 4;
+    float y = cursor.y - height - 5;
+    float right = x + height;
+    float bottom = y + height;
+
+    Vector2 topLeft = { x,y };
+    Vector2 topRight = { right,y };
+    Vector2 botLeft = { x,bottom };
+    Vector2 botRight = { right,bottom };
+    Vector2 center = { x + height / 2, y + height / 2 };
+
+    Vector2 shadowOffset = { -2,2 };
+    DrawLineEx(topLeft + shadowOffset, botRight + shadowOffset, 2, { 0,0,0,70 });
+    DrawLineEx(topRight + shadowOffset, botLeft + shadowOffset, 2, { 0,0,0,70 });
+    DrawLineEx(topLeft, botRight, 2, MAROON);
+    DrawLineEx(topRight, botLeft, 2, MAROON);
+}
+
 int main()
 {
     int windowWidth = 1280;
@@ -171,25 +231,22 @@ int main()
             // Right click
             else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
             {
-                if (hoveredElement.IsSomething())
+                // Right click a notecard
+                if (hoveredElement.IsCard())
                 {
-                    // Right click a notecard
-                    if (hoveredElement.IsCardOrPin())
-                    {
-                        DestroyCard(hoveredElement.GetCard());
-                        hoveredElement.Clear();
-                    }
-
-                    // Right click a thread
-                    else if (hoveredElement.IsThread())
-                    {
-                        DestroyThread(hoveredElement.GetThread());
-                        hoveredElement.Clear();
-                    }
-
-                    // Right clicking a button does nothing.
+                    DestroyCard(hoveredElement.GetCard());
+                    hoveredElement.Clear();
                 }
 
+                // Right click a thread
+                else if (hoveredElement.IsThread())
+                {
+                    DestroyThread(hoveredElement.GetThread());
+                    hoveredElement.Clear();
+                }
+
+                // Right clicking a button does nothing.
+                // 
                 // Right clicking has no effect without an element.
             }
         }
@@ -202,6 +259,7 @@ int main()
 
             ClearBackground(CORKBOARD);
 
+            // Draw cards
             for (Notecard* card : g_cards)
             {
                 card->DrawCard();
@@ -231,6 +289,7 @@ int main()
                 DrawRing(draggedElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, BLUE);
             }
 
+            // Draw threads
             for (Thread* thread : g_threads)
             {
                 thread->Draw();
@@ -251,6 +310,7 @@ int main()
                 DrawLineEx(startCard->PinPosition(), cursor, Thread::thickness, threadColor);
             }
 
+            // Draw pins
             for (Notecard* card : g_cards)
             {
                 card->DrawPin();
@@ -271,42 +331,32 @@ int main()
             *   Draw the UI                           *
             ******************************************/
             
-            // Not hovering nor dragging
-            if (hoveredElement.IsEmpty() && draggedElement.IsEmpty())
+            // Not dragging
+            if (draggedElement.IsEmpty())
             {
-                float width = 4 * 5;
-                float height = 3 * 5;
-                float x = cursor.x - width - 2;
-                float y = cursor.y - height - 2;
-                Rectangle rec = { x, y, width, height };
+                // Hovering nothing
+                if (hoveredElement.IsEmpty())
+                {
+                    DrawIcon_CreateNotecard(cursor);
+                }
 
-                Rectangle recShadow = rec;
-                recShadow.x -= 2;
-                recShadow.y += 2;
-                BeginBlendMode(BLEND_MULTIPLIED);
-                DrawRectangleLinesEx(recShadow, 2, {0,0,0,70});
-                EndBlendMode();
+                // Hovering a pin
+                else if (hoveredElement.IsPin())
+                {
+                    DrawIcon_CreateThread(cursor);
+                }
 
-                DrawRectangleLinesEx(rec, 2, cardColor);
-            }
+                // Cards can be moved around
+                if (hoveredElement.IsCard())
+                {
+                    DrawIcon_Move(cursor);
+                }
 
-            // Hovering a pin
-            if (draggedElement.IsEmpty() && hoveredElement.IsPin())
-            {
-                float width = 4 * 5;
-                float height = 2;
-                float x = cursor.x - width - 2;
-                float y = cursor.y - height - 2 * 5 - 2;
-                Rectangle rec = { x, y, width, height };
-
-                Rectangle recShadow = rec;
-                recShadow.x -= 2;
-                recShadow.y += 2;
-                BeginBlendMode(BLEND_MULTIPLIED);
-                DrawRectangleLinesEx(recShadow, 2, {0,0,0,70});
-                EndBlendMode();
-
-                DrawRectangleLinesEx(rec, 2, threadColor);
+                // Pins and cards can be destroyed with right click
+                if (hoveredElement.IsCard() || hoveredElement.IsThread())
+                {
+                    DrawIcon_Destroy(cursor);
+                }
             }
 
             // Buttons
@@ -318,10 +368,7 @@ int main()
             // Hovered button
             if (hoveredElement.IsButton())
             {
-                ButtonWrapper* button = hoveredElement.GetButton();
-
-                Rectangle rec = button->GetRectangle();
-                DrawRectangleLinesEx(rec, 3, YELLOW);
+                DrawRectangleLinesEx(hoveredElement.GetButton()->GetRectangle(), 3, YELLOW);
             }
 
         } EndDrawing();
