@@ -7,37 +7,37 @@
 #include "VectorMath.h"
 #include "Thread.h"
 #include "Notecard.h"
-#include "CBButton.h"
+#include "CustomButtons.h"
 #include "Serialize.h"
 
 #define CORKBOARD CLITERAL(Color){202,164,120,255}
 
-using Element = std::variant<Notecard*, Thread*, CBButton*>;
+using Element = std::variant<Notecard*, Thread*, ButtonWrapper*>;
 using OptElement = std::optional<Element>;
 
-std::vector<CBButton*> g_buttons = {
+std::vector<ButtonWrapper*> g_buttons = {
     // Card colors
-    new CardColorButton(CBButton::size.x * 0, 0, cardstockWhite),
-    new CardColorButton(CBButton::size.x * 1, 0, cardstockRed),
-    new CardColorButton(CBButton::size.x * 2, 0, cardstockOrange),
-    new CardColorButton(CBButton::size.x * 3, 0, cardstockYellow),
-    new CardColorButton(CBButton::size.x * 4, 0, cardstockGreen),
-    new CardColorButton(CBButton::size.x * 5, 0, cardstockLightBlue),
-    new CardColorButton(CBButton::size.x * 6, 0, cardstockBlue),
-    new CardColorButton(CBButton::size.x * 7, 0, cardstockLavender),
-    new CardColorButton(CBButton::size.x * 8, 0, cardstockPink),
+    new ButtonWrapper(GenericButtonData::width * 0, 0, CardColorButton(cardstockWhite)),
+    new ButtonWrapper(GenericButtonData::width * 1, 0, CardColorButton(cardstockRed)),
+    new ButtonWrapper(GenericButtonData::width * 2, 0, CardColorButton(cardstockOrange)),
+    new ButtonWrapper(GenericButtonData::width * 3, 0, CardColorButton(cardstockYellow)),
+    new ButtonWrapper(GenericButtonData::width * 4, 0, CardColorButton(cardstockGreen)),
+    new ButtonWrapper(GenericButtonData::width * 5, 0, CardColorButton(cardstockLightBlue)),
+    new ButtonWrapper(GenericButtonData::width * 6, 0, CardColorButton(cardstockBlue)),
+    new ButtonWrapper(GenericButtonData::width * 7, 0, CardColorButton(cardstockLavender)),
+    new ButtonWrapper(GenericButtonData::width * 8, 0, CardColorButton(cardstockPink)),
 
     // Thread colors
     // Todo: Make specialized colors
-    new ThreadColorButton(CBButton::size.x * 0, CBButton::size.y, threadWhite),
-    new ThreadColorButton(CBButton::size.x * 1, CBButton::size.y, threadRed),
-    new ThreadColorButton(CBButton::size.x * 2, CBButton::size.y, threadOrange),
-    new ThreadColorButton(CBButton::size.x * 3, CBButton::size.y, threadYellow),
-    new ThreadColorButton(CBButton::size.x * 4, CBButton::size.y, threadGreen),
-    new ThreadColorButton(CBButton::size.x * 5, CBButton::size.y, threadLightBlue),
-    new ThreadColorButton(CBButton::size.x * 6, CBButton::size.y, threadBlue),
-    new ThreadColorButton(CBButton::size.x * 7, CBButton::size.y, threadPurple),
-    new ThreadColorButton(CBButton::size.x * 8, CBButton::size.y, threadPink),
+    new ButtonWrapper(GenericButtonData::width * 0, GenericButtonData::height, ThreadColorButton(threadWhite)),
+    new ButtonWrapper(GenericButtonData::width * 1, GenericButtonData::height, ThreadColorButton(threadRed)),
+    new ButtonWrapper(GenericButtonData::width * 2, GenericButtonData::height, ThreadColorButton(threadOrange)),
+    new ButtonWrapper(GenericButtonData::width * 3, GenericButtonData::height, ThreadColorButton(threadYellow)),
+    new ButtonWrapper(GenericButtonData::width * 4, GenericButtonData::height, ThreadColorButton(threadGreen)),
+    new ButtonWrapper(GenericButtonData::width * 5, GenericButtonData::height, ThreadColorButton(threadLightBlue)),
+    new ButtonWrapper(GenericButtonData::width * 6, GenericButtonData::height, ThreadColorButton(threadBlue)),
+    new ButtonWrapper(GenericButtonData::width * 7, GenericButtonData::height, ThreadColorButton(threadPurple)),
+    new ButtonWrapper(GenericButtonData::width * 8, GenericButtonData::height, ThreadColorButton(threadPink)),
 };
 
 void CheckHovered(Vector2 cursor, OptElement& optHoveredElement, bool& hoveringPin, bool draggingPin)
@@ -45,7 +45,7 @@ void CheckHovered(Vector2 cursor, OptElement& optHoveredElement, bool& hoveringP
     if (!draggingPin) // Ignore these collision when creating a thread
     {
         // Buttons
-        for (CBButton* button : g_buttons)
+        for (ButtonWrapper* button : g_buttons)
         {
             if (button->IsHovered(cursor))
             {
@@ -100,6 +100,11 @@ int main()
 
     cardColor = cardstockWhite;
     threadColor = threadWhite;
+
+    activeCardColorButton = &g_buttons[0]->genericData;
+    activeCardColorButton->state = ButtonState::Active;
+    activeThreadColorButton = &g_buttons[9]->genericData;
+    activeThreadColorButton->state = ButtonState::Active;
 
     OptElement optDraggedElement = {};
 
@@ -226,9 +231,9 @@ int main()
 
                 // Left click a button
                 // Performs the button operation
-                else if (std::holds_alternative<CBButton*>(*optHoveredElement))
+                else if (std::holds_alternative<ButtonWrapper*>(*optHoveredElement))
                 {
-                    std::get<CBButton*>(*optHoveredElement)->OnClick();
+                    std::get<ButtonWrapper*>(*optHoveredElement)->OnClick();
                 }
 
                 // Left clicking a thread does nothing.
@@ -271,7 +276,7 @@ int main()
             ClearBackground(CORKBOARD);
 
             // Cards are drawn in reverse order
-            for (int i = g_cards.size() - 1; i >= 0; --i)
+            for (int i = (int)g_cards.size() - 1; i >= 0; --i)
             {
                 g_cards[i]->DrawCard();
             }
@@ -290,7 +295,7 @@ int main()
                 else
                 {
                     DrawRectangleLinesEx(card->GetCardRectangle(), 3, YELLOW);
-                    DrawText(TextFormat("%i", card->threads.size()), card->position.x, card->position.y - 10, 8, RED);
+                    DrawText(TextFormat("%i", card->threads.size()), (int)card->position.x, (int)card->position.y - 10, 8, RED);
                 }
             }
 
@@ -341,7 +346,7 @@ int main()
 
                 card->DrawCardGhost();
 
-                DrawText(TextFormat("%i", card->threads.size()), card->position.x, card->position.y - 10, 8, RED);
+                DrawText(TextFormat("%i", card->threads.size()), (int)card->position.x, (int)card->position.y - 10, 8, RED);
                 DrawRectangleLinesEx(card->GetCardRectangle(), 3, YELLOW);
             }
 
@@ -352,9 +357,11 @@ int main()
             // Not hovering nor dragging
             if (!optHoveredElement.has_value() && !optDraggedElement.has_value())
             {
-                int width = 4 * 5;
-                int height = 3 * 5;
-                Rectangle rec = { cursor.x - width - 2, cursor.y - height - 2, width, height };
+                float width = 4 * 5;
+                float height = 3 * 5;
+                float x = cursor.x - width - 2;
+                float y = cursor.y - height - 2;
+                Rectangle rec = { x, y, width, height };
 
                 Rectangle recShadow = rec;
                 recShadow.x -= 2;
@@ -371,9 +378,11 @@ int main()
             {
                 _ASSERT_EXPR(optHoveredElement.has_value() && std::holds_alternative<Notecard*>(*optHoveredElement), L"Hovering a pin without actually hovering a pin");
 
-                int width = 4 * 5;
-                int height = 2;
-                Rectangle rec = { cursor.x - width - 2, cursor.y - height - 2 * 5 - 2, width, height };
+                float width = 4 * 5;
+                float height = 2;
+                float x = cursor.x - width - 2;
+                float y = cursor.y - height - 2 * 5 - 2;
+                Rectangle rec = { x, y, width, height };
 
                 Rectangle recShadow = rec;
                 recShadow.x -= 2;
@@ -386,15 +395,15 @@ int main()
             }
 
             // Buttons
-            for (CBButton* button : g_buttons)
+            for (ButtonWrapper* button : g_buttons)
             {
                 button->Draw();
             }
 
             // Hovered button
-            if (optHoveredElement.has_value() && std::holds_alternative<CBButton*>(*optHoveredElement))
+            if (optHoveredElement.has_value() && std::holds_alternative<ButtonWrapper*>(*optHoveredElement))
             {
-                CBButton* button = std::get<CBButton*>(*optHoveredElement);
+                ButtonWrapper* button = std::get<ButtonWrapper*>(*optHoveredElement);
 
                 Rectangle rec = button->GetRectangle();
                 DrawRectangleLinesEx(rec, 3, YELLOW);

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "Thread.h"
 #include "Notecard.h"
-#include "CBButton.h"
+#include "CustomButtons.h"
 
 std::string g_activeBoard;
 
