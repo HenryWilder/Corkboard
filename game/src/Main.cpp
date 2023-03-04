@@ -261,22 +261,10 @@ int main()
                 card->DrawCard(draggedElement.IsCard() && card == draggedElement.GetCard() ? 4.0f : 2.0f);
             }
 
-            // Hovered card/pin
-            if (hoveredElement.IsCardOrPin() && draggedElement.IsEmpty())
+            // Hovered pin
+            if (hoveredElement.IsPin() && draggedElement.IsEmpty())
             {
-                Notecard* card = hoveredElement.GetCard();
-
-                // Hovering pin
-                if (hoveredElement.IsPin())
-                {
-                    DrawRing(card->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, YELLOW);
-                }
-                // Hovering card
-                else
-                {
-                    DrawRectangleLinesEx(card->GetCardRectangle(), 3, YELLOW);
-                    DrawText(TextFormat("%i", card->threads.size()), (int)card->position.x, (int)card->position.y - 10, 8, RED);
-                }
+                DrawRing(hoveredElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, YELLOW);
             }
 
             // Dragged pin
@@ -313,7 +301,7 @@ int main()
             }
 
             // Draw ghost of hovered card over everything else
-            if (hoveredElement.IsCard() && draggedElement.IsEmpty())
+            if (hoveredElement.IsCard() && !draggedElement.IsCard())
             {
                 Notecard* card = hoveredElement.GetCard();
 
