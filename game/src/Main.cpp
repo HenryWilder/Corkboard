@@ -111,50 +111,27 @@ int main()
                 // Can't create thread to same card as originator
                 if (draggedElement.IsPin() && hoveredElement.IsCardOrPin() && hoveredElement != draggedElement)
                 {
-                    Notecard* startCard = draggedElement.GetCard();
-                    Notecard* endCard = hoveredElement.GetCard();
-
-                    // Don't create duplicate connections
-                    bool shouldCreateThread = true;
-                    {
-                        Notecard* cardWithFewerConnections =
-                            startCard->threads.size() <= endCard->threads.size()
-                            ? startCard
-                            : endCard;
-
-                        for (Thread* thread : cardWithFewerConnections->threads)
-                        {
-                            bool connectionExists =
-                                (thread->start == startCard && thread->end == endCard) ||
-                                (thread->end == startCard && thread->start == endCard);
-
-                            if (connectionExists)
-                            {
-                                shouldCreateThread = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (shouldCreateThread)
-                        CreateThread(threadColor, startCard, endCard);
+                    CreateThread(threadColor, draggedElement.GetCard(), hoveredElement.GetCard());
                 }
 
                 // Cleanup
                 draggedElement.Clear();
             }
+
+            // Continued dragging
             // Notecard
             else if (draggedElement.IsCard())
             {
                 draggedElement.GetCard()->position = cursor + clickOffset;
             }
+
+            // Thread dragging has visual effect but no active effect until release.
         }
 
         // Handle clicks
         // Clicking has no effect when dragging.
         if (draggedElement.IsEmpty())
         {
-
             // Left click
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {

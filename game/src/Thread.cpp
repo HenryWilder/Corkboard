@@ -55,6 +55,24 @@ std::vector<Thread*> g_threads;
 
 void CreateThread(Color color, Notecard* start, Notecard* end)
 {
+    // Don't create duplicate connections
+    {
+        Notecard* cardWithFewerConnections =
+            start->threads.size() <= end->threads.size()
+            ? start
+            : end;
+
+        for (Thread* thread : cardWithFewerConnections->threads)
+        {
+            bool connectionExists =
+                (thread->start == start && thread->end == end) ||
+                (thread->end == start && thread->start == end);
+
+            if (connectionExists)
+                return;
+        }
+    }
+
     Thread* thread = new Thread(color, start, end);
 	g_threads.push_back(thread);
     start->AddThreadConnection(thread);
