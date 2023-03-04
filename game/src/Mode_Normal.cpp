@@ -27,53 +27,6 @@ void Mode_Normal_Unload()
     // todo
 }
 
-void CheckHovered(Vector2 cursor)
-{
-    if (!draggedElement.IsPin()) // Ignore these collision when creating a thread
-    {
-        // Buttons
-        for (ButtonWrapper* button : g_buttons)
-        {
-            if (button->IsHovered(cursor))
-            {
-                hoveredElement = button;
-                return;
-            }
-        }
-
-        // Pins
-        for (Notecard* card : g_cards)
-        {
-            if (card->IsPinHovered(cursor))
-            {
-                hoveredElement = card;
-                hoveredElement.SetIsPin();
-                return;
-            }
-        }
-
-        // Threads
-        for (Thread* thread : g_threads)
-        {
-            if (thread->IsHovered(cursor))
-            {
-                hoveredElement = thread;
-                return;
-            }
-        }
-    }
-
-    // Cards
-    for (Notecard* card : g_cards)
-    {
-        if (card->IsCardHovered(cursor))
-        {
-            hoveredElement = card;
-            return;
-        }
-    }
-}
-
 void DrawIcon_CreateNotecard(Vector2 cursor)
 {
     float width = 4 * 5;
@@ -143,10 +96,57 @@ bool Mode_Normal_Update()
     Vector2 cursor = GetMousePosition();
     Vector2 cursorInWorld = GetScreenToWorld2D(cursor, cam);
     Vector2 cursorDelta = GetMouseDelta();
+    Vector2 cursorDeltaInWorld = cursorDelta / cam.zoom;
 
     hoveredElement.Clear(); // Resets each frame
 
-    CheckHovered(cursorInWorld);
+    // TODO
+    {
+        if (!draggedElement.IsPin()) // Ignore these collision when creating a thread
+        {
+            // Buttons
+            for (ButtonWrapper* button : g_buttons)
+            {
+                if (button->IsHovered(cursor))
+                {
+                    hoveredElement = button;
+                    goto FinishHoverTests;
+                }
+            }
+
+            // Pins
+            for (Notecard* card : g_cards)
+            {
+                if (card->IsPinHovered(cursorInWorld))
+                {
+                    hoveredElement = card;
+                    hoveredElement.SetIsPin();
+                    goto FinishHoverTests;
+                }
+            }
+
+            // Threads
+            for (Thread* thread : g_threads)
+            {
+                if (thread->IsHovered(cursorInWorld))
+                {
+                    hoveredElement = thread;
+                    goto FinishHoverTests;
+                }
+            }
+        }
+
+        // Cards
+        for (Notecard* card : g_cards)
+        {
+            if (card->IsCardHovered(cursorInWorld))
+            {
+                hoveredElement = card;
+                goto FinishHoverTests;
+            }
+        }
+    }
+FinishHoverTests:
 
     // Dragging something
     if (draggedElement.IsSomething())
@@ -169,7 +169,7 @@ bool Mode_Normal_Update()
         // Notecard
         else if (draggedElement.IsCard())
         {
-            draggedElement.GetCard()->position += cursorDelta;
+            draggedElement.GetCard()->position += cursorDeltaInWorld;
         }
     }
 
@@ -238,8 +238,14 @@ bool Mode_Normal_Update()
     // Continue panning
     if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
     {
-        cam.target -= cursorDelta;
+        cam.target -= cursorDeltaInWorld;
     }
+
+    float scroll = GetMouseWheelMove();
+    if (scroll > 0.0f)
+        cam.zoom *= 2;
+    else if (scroll < 0.0f)
+        cam.zoom /= 2;
 
     /******************************************
     *   Draw the frame                        *
