@@ -11,10 +11,15 @@
 
 Element draggedElement;
 Element hoveredElement;
+Camera2D cam;
 
 void Mode_Normal_Init()
 {
     draggedElement.Clear();
+    cam.offset = { 0,0 };
+    cam.target = { 0,0 };
+    cam.rotation = 0.0f;
+    cam.zoom = 1.0f;
 }
 
 void Mode_Normal_Unload()
@@ -129,7 +134,6 @@ void DrawIcon_Destroy(Vector2 cursor)
     DrawLineEx(topRight, botLeft, 2, MAROON);
 }
 
-Vector2 clickOffset = { 0,0 };
 bool Mode_Normal_Update()
 {
     /******************************************
@@ -137,16 +141,18 @@ bool Mode_Normal_Update()
     ******************************************/
 
     Vector2 cursor = GetMousePosition();
+    Vector2 cursorInWorld = GetScreenToWorld2D(cursor, cam);
+    Vector2 cursorDelta = GetMouseDelta();
 
     hoveredElement.Clear(); // Resets each frame
 
-    CheckHovered(cursor);
+    CheckHovered(cursorInWorld);
 
     // Dragging something
     if (draggedElement.IsSomething())
     {
         // Always lose target on release
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
         {
             // Create pin
             // Can't create thread to same card as originator
@@ -163,7 +169,7 @@ bool Mode_Normal_Update()
         // Notecard
         else if (draggedElement.IsCard())
         {
-            draggedElement.GetCard()->position = cursor + clickOffset;
+            draggedElement.GetCard()->position += cursorDelta;
         }
     }
 
@@ -172,26 +178,25 @@ bool Mode_Normal_Update()
     else if (draggedElement.IsEmpty())
     {
         // Drag a thread from a pin
-        if (hoveredElement.IsPin() && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        if (hoveredElement.IsPin() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             draggedElement = hoveredElement;
         }
 
         // Double click a notecard
         // Edits card text
-        else if (hoveredElement.IsCard() && IsGestureDetected(GESTURE_DOUBLETAP))
+        else if (hoveredElement.IsCard() && IsMouseButtonPressed(GESTURE_DOUBLETAP))
         {
-            SetMode_TextEdit(hoveredElement.GetCard());
-            return true;
+            //SetMode_TextEdit(hoveredElement.GetCard());
+            //return true;
         }
 
         // Drag a notecard
-        else if (hoveredElement.IsCard() && IsGestureDetected(GESTURE_DRAG))
+        else if (hoveredElement.IsCard() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             draggedElement = hoveredElement;
 
             Notecard* card = draggedElement.GetCard();
-            clickOffset = card->position - cursor;
 
             // Move card to end
             g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
@@ -200,14 +205,14 @@ bool Mode_Normal_Update()
 
         // Left click the board
         // Creates a notecard
-        else if (hoveredElement.IsEmpty() && IsGestureDetected(GESTURE_TAP))
+        else if (hoveredElement.IsEmpty() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            CreateCard(cursor - Notecard::pinOffset, cardColor);
+            CreateCard(cursorInWorld - Notecard::pinOffset, cardColor);
         }
 
         // Left click a button
         // Performs the button operation
-        else if (hoveredElement.IsButton() && IsGestureDetected(GESTURE_TAP))
+        else if (hoveredElement.IsButton() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             hoveredElement.GetButton()->OnClick();
         }
@@ -215,7 +220,7 @@ bool Mode_Normal_Update()
         // Right click a notecard
         // Destroys it
         // Todo: Make a dropdown menu with options like "change color" and "destroy"
-        if (hoveredElement.IsCard() && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+        if (hoveredElement.IsCard() && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
             DestroyCard(hoveredElement.GetCard());
             hoveredElement.Clear();
@@ -223,11 +228,17 @@ bool Mode_Normal_Update()
 
         // Right click a thread
         // Destroys it
-        else if (hoveredElement.IsThread() && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+        else if (hoveredElement.IsThread() && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
             DestroyThread(hoveredElement.GetThread());
             hoveredElement.Clear();
         }
+    }
+
+    // Continue panning
+    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+    {
+        cam.target -= cursorDelta;
     }
 
     /******************************************
@@ -238,61 +249,65 @@ bool Mode_Normal_Update()
 
         ClearBackground(CORKBOARD);
 
-        // Draw cards
-        for (Notecard* card : g_cards)
-        {
-            card->DrawCard(draggedElement.IsCard() && card == draggedElement.GetCard() ? 4.0f : 2.0f);
-        }
+        BeginMode2D(cam); {
 
-        // Hovered pin
-        if (hoveredElement.IsPin() && draggedElement.IsEmpty())
-        {
-            DrawRing(hoveredElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, YELLOW);
-        }
+            // Draw cards
+            for (Notecard* card : g_cards)
+            {
+                card->DrawCard(draggedElement.IsCard() && card == draggedElement.GetCard() ? 4.0f : 2.0f);
+            }
 
-        // Dragged pin
-        if (draggedElement.IsPin())
-        {
-            DrawRing(draggedElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, BLUE);
-        }
+            // Hovered pin
+            if (hoveredElement.IsPin() && draggedElement.IsEmpty())
+            {
+                DrawRing(hoveredElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, YELLOW);
+            }
 
-        // Draw threads
-        for (Thread* thread : g_threads)
-        {
-            thread->Draw();
-        }
+            // Dragged pin
+            if (draggedElement.IsPin())
+            {
+                DrawRing(draggedElement.GetCard()->PinPosition(), Notecard::pinRadius, Notecard::pinRadius + 3, 0, 360, 100, BLUE);
+            }
 
-        // Hovering thread
-        if (hoveredElement.IsThread() && draggedElement.IsEmpty())
-        {
-            Thread* thread = hoveredElement.GetThread();
+            // Draw threads
+            for (Thread* thread : g_threads)
+            {
+                thread->Draw();
+            }
 
-            DrawLineEx(thread->StartPosition(), thread->EndPosition(), thread->thickness, YELLOW);
-        }
+            // Hovering thread
+            if (hoveredElement.IsThread() && draggedElement.IsEmpty())
+            {
+                Thread* thread = hoveredElement.GetThread();
 
-        // Creating thread
-        if (draggedElement.IsPin())
-        {
-            Notecard* startCard = draggedElement.GetCard();
-            DrawLineEx(startCard->PinPosition(), cursor, Thread::thickness, threadColor);
-        }
+                DrawLineEx(thread->StartPosition(), thread->EndPosition(), thread->thickness, YELLOW);
+            }
 
-        // Draw pins
-        for (Notecard* card : g_cards)
-        {
-            card->DrawPin();
-        }
+            // Creating thread
+            if (draggedElement.IsPin())
+            {
+                Notecard* startCard = draggedElement.GetCard();
+                DrawLineEx(startCard->PinPosition(), cursor, Thread::thickness, threadColor);
+            }
 
-        // Draw ghost of hovered card over everything else
-        if (hoveredElement.IsCard() && !draggedElement.IsCard())
-        {
-            Notecard* card = hoveredElement.GetCard();
+            // Draw pins
+            for (Notecard* card : g_cards)
+            {
+                card->DrawPin();
+            }
 
-            card->DrawCardGhost();
+            // Draw ghost of hovered card over everything else
+            if (hoveredElement.IsCard() && !draggedElement.IsCard())
+            {
+                Notecard* card = hoveredElement.GetCard();
 
-            DrawText(TextFormat("%i", card->threads.size()), (int)card->position.x, (int)card->position.y - 10, 8, RED);
-            DrawRectangleLinesEx(card->GetCardRectangle(), 3, YELLOW);
-        }
+                card->DrawCardGhost();
+
+                DrawText(TextFormat("%i", card->threads.size()), (int)card->position.x, (int)card->position.y - 10, 8, RED);
+                DrawRectangleLinesEx(card->GetCardRectangle(), 3, YELLOW);
+            }
+
+        } EndMode2D();
 
         /******************************************
         *   Draw the UI                           *
