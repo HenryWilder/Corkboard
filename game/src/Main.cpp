@@ -102,7 +102,7 @@ int main()
         CheckHovered(cursor);
 
         // Dragging something
-        if (!draggedElement.IsEmpty())
+        if (draggedElement.IsSomething())
         {
             // Always lose target on release
             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
@@ -150,28 +150,30 @@ int main()
             }
         }
 
-        // Click notecard
-        if (hoveredElement.IsCardOrPin() && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        {
-            draggedElement = hoveredElement;
-            if (draggedElement.IsCard())
-            {
-                Notecard* card = draggedElement.GetCard();
-                clickOffset = card->position - cursor;
-
-                // Move card to end
-                g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
-                g_cards.push_back(card);
-            }
-        }
-
         // Handle clicks
         // Clicking has no effect when dragging.
         if (draggedElement.IsEmpty())
         {
+
             // Left click
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
+                // Left click a notecard
+                // Starts dragging it
+                if (hoveredElement.IsCardOrPin())
+                {
+                    draggedElement = hoveredElement;
+                    if (draggedElement.IsCard())
+                    {
+                        Notecard* card = draggedElement.GetCard();
+                        clickOffset = card->position - cursor;
+
+                        // Move card to end
+                        g_cards.erase(std::find(g_cards.begin(), g_cards.end(), card));
+                        g_cards.push_back(card);
+                    }
+                }
+
                 // Left click the board
                 // Creates a notecard
                 if (hoveredElement.IsEmpty())
@@ -192,7 +194,7 @@ int main()
             // Right click
             else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
             {
-                if (!hoveredElement.IsEmpty())
+                if (hoveredElement.IsSomething())
                 {
                     // Right click a notecard
                     if (hoveredElement.IsCardOrPin())

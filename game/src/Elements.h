@@ -28,6 +28,7 @@ public:
     Element() : tag(Type::ELEMENTTYPE_EMPTY), card(nullptr) {}
 
     bool IsEmpty();
+    bool IsSomething();
     bool IsCard();
     bool IsPin();
     bool IsCardOrPin(); // Both pin and card share Notecard*

@@ -1,6 +1,7 @@
 #include "Elements.h"
 
 bool Element::IsEmpty() { return tag == Type::ELEMENTTYPE_EMPTY; }
+bool Element::IsSomething() { return !IsEmpty(); }
 bool Element::IsCard() { return tag == Type::ELEMENTTYPE_CARD; }
 bool Element::IsPin() { return tag == Type::ELEMENTTYPE_PIN; }
 bool Element::IsCardOrPin() { return IsCard() || IsPin(); }
