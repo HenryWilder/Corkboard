@@ -167,7 +167,7 @@ int main()
 
         // Handle clicks
         // Clicking has no effect when dragging.
-        if (!draggedElement.IsEmpty())
+        if (draggedElement.IsEmpty())
         {
             // Left click
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))

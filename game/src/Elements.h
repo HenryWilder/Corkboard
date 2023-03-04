@@ -8,7 +8,6 @@ class ButtonWrapper;
 struct Element
 {
 private:
-    // Both pin and card share Notecard*
     enum class Type
     {
         ELEMENTTYPE_EMPTY = 0,
@@ -31,7 +30,7 @@ public:
     bool IsEmpty();
     bool IsCard();
     bool IsPin();
-    bool IsCardOrPin();
+    bool IsCardOrPin(); // Both pin and card share Notecard*
     bool IsThread();
     bool IsButton();
 
