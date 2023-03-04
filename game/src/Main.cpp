@@ -201,6 +201,7 @@ int main()
             else if (hoveredElement.IsCard() && IsGestureDetected(GESTURE_DOUBLETAP))
             {
                 // Todo: edit text
+                hoveredElement.GetCard()->color = cardColor; // Testing
             }
 
             // Drag a notecard
@@ -232,6 +233,7 @@ int main()
 
             // Right click a notecard
             // Destroys it
+            // Todo: Make a dropdown menu with options like "change color" and "destroy"
             if (hoveredElement.IsCard() && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
             {
                 DestroyCard(hoveredElement.GetCard());
