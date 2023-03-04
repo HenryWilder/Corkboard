@@ -1,5 +1,7 @@
 #include <variant>
 #include "CustomButtons.h"
+#include "Thread.h"
+#include "Notecard.h"
 #include "VectorMath.h"
 
 Color cardColor;
@@ -120,3 +122,28 @@ Rectangle ButtonWrapper::GetRectangle() const
 {
 	return genericData.GetRectangle();
 }
+
+std::vector<ButtonWrapper*> g_buttons = {
+	// Card colors
+	new ButtonWrapper(GenericButtonData::width * 0, 0, CardColorButton(cardstockWhite)),
+	new ButtonWrapper(GenericButtonData::width * 1, 0, CardColorButton(cardstockRed)),
+	new ButtonWrapper(GenericButtonData::width * 2, 0, CardColorButton(cardstockOrange)),
+	new ButtonWrapper(GenericButtonData::width * 3, 0, CardColorButton(cardstockYellow)),
+	new ButtonWrapper(GenericButtonData::width * 4, 0, CardColorButton(cardstockGreen)),
+	new ButtonWrapper(GenericButtonData::width * 5, 0, CardColorButton(cardstockLightBlue)),
+	new ButtonWrapper(GenericButtonData::width * 6, 0, CardColorButton(cardstockBlue)),
+	new ButtonWrapper(GenericButtonData::width * 7, 0, CardColorButton(cardstockLavender)),
+	new ButtonWrapper(GenericButtonData::width * 8, 0, CardColorButton(cardstockPink)),
+
+	// Thread colors
+	// Todo: Make specialized colors
+	new ButtonWrapper(GenericButtonData::width * 0, GenericButtonData::height, ThreadColorButton(threadWhite)),
+	new ButtonWrapper(GenericButtonData::width * 1, GenericButtonData::height, ThreadColorButton(threadRed)),
+	new ButtonWrapper(GenericButtonData::width * 2, GenericButtonData::height, ThreadColorButton(threadOrange)),
+	new ButtonWrapper(GenericButtonData::width * 3, GenericButtonData::height, ThreadColorButton(threadYellow)),
+	new ButtonWrapper(GenericButtonData::width * 4, GenericButtonData::height, ThreadColorButton(threadGreen)),
+	new ButtonWrapper(GenericButtonData::width * 5, GenericButtonData::height, ThreadColorButton(threadLightBlue)),
+	new ButtonWrapper(GenericButtonData::width * 6, GenericButtonData::height, ThreadColorButton(threadBlue)),
+	new ButtonWrapper(GenericButtonData::width * 7, GenericButtonData::height, ThreadColorButton(threadPurple)),
+	new ButtonWrapper(GenericButtonData::width * 8, GenericButtonData::height, ThreadColorButton(threadPink)),
+};

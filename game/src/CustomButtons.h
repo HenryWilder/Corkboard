@@ -1,5 +1,6 @@
 #pragma once
 #include <variant>
+#include <vector>
 #include <raylib.h>
 
 extern Color cardColor;
@@ -96,3 +97,5 @@ public:
 
 extern GenericButtonData* activeThreadColorButton;
 extern GenericButtonData* activeCardColorButton;
+
+extern std::vector<ButtonWrapper*> g_buttons;
